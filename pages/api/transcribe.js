@@ -1,11 +1,20 @@
 import { SpeechClient } from '@google-cloud/speech';
-import fs from 'fs';
-import path from 'path';
+import multer from 'multer';
 
 const NOTION_TOKEN = "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";
 const DATABASE_ID = "12e726ebeb6f80258371c7dd12c94f9d";
 
 const getPublishedDate = () => new Date().toISOString();
+
+// Configure multer to store files in memory
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Use multer middleware to parse the request
+export const config = {
+  api: {
+    bodyParser: false, // Disable the default body parser
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,45 +22,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log("Transcribing...");
-    // Save the uploaded file temporarily
-    const file = req.body.file;
-    const filePath = path.join(process.cwd(), 'temp-audio.wav');
-    fs.writeFileSync(filePath, Buffer.from(file, 'base64'));
+    // Use multer to parse the request
+    upload.single('file')(req, res, async (err) => {
+      if (err) {
+        console.error('Error parsing file upload:', err);
+        return res.status(400).json({ message: 'File upload error' });
+      }
 
-    console.log('Audio file saved:', filePath);
+      // Initialize the SpeechClient
+      const client = new SpeechClient();
 
-    // Initialize Google Cloud Speech-to-Text client
-    const client = new SpeechClient();
+      // Get the file data from the request
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
 
-    // Read the audio file
-    const audio = {
-      content: fs.readFileSync(filePath).toString('base64'),
-    };
+      const audioBytes = file.buffer.toString('base64');
 
-    // Configure the request
-    const config = {
-      encoding: 'WEBM_OPUS',
-      sampleRateHertz: 48000,
-      languageCode: 'en-US',
-    };
+      // Configure the request
+      const audio = {
+        content: audioBytes,
+      };
+      const config = {
+        encoding: 'WEBM_OPUS', // Adjust based on your file format
+        sampleRateHertz: 48000, // Adjust based on your file
+        languageCode: 'en-US', // Set the language
+      };
+      const request = {
+        audio: audio,
+        config: config,
+      };
 
-    const request = {
-      audio: audio,
-      config: config,
-    };
+      // Send the request to the API
+      const [response] = await client.recognize(request);
 
-    // Transcribe the audio
-    console.log('Request:', request);
-    const [response] = await client.recognize(request);
-    // console.log(request.audio.content);
-    const transcription = response.results
-      .map(result => result.alternatives[0].transcript)
-      .join('\n');
-    
-    console.log(response, transcription);
+      // Extract the transcription
+      const transcription = response.results
+        .map(result => result.alternatives[0].transcript)
+        .join('\n');
 
-    // Save transcription to Notion
+      // Save transcription to Notion
     const notionResponse = await fetch('https://api.notion.com/v1/pages', {
       method: 'POST',
       headers: {
@@ -86,13 +97,11 @@ export default async function handler(req, res) {
 
     console.log(notionData);
 
-    // Delete the temporary file
-    fs.unlinkSync(filePath);
-
-    // Return the transcription and Notion response
-    res.status(200).json({ transcription, notionData });
+      // Return the transcription
+      res.status(200).json({ transcription });
+    });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error transcribing audio:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 }

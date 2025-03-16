@@ -31,20 +31,26 @@ const VoiceRecorder = () => {
   const transcribeAudio = async () => {
     if (!audioBlob) return;
   
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Audio = reader.result.split(',')[1]; // Extract base64 data
-      try {
-        const response = await axios.post('/api/transcribe', {
-          file: base64Audio,
-        });
-        setTranscription(response.data.transcription);
-        console.log('Notion Response:', response.data.notionData); // Log Notion response
-      } catch (error) {
-        console.error('Error transcribing audio:', error);
-      }
-    };
-    reader.readAsDataURL(audioBlob);
+    try {
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'recording.wav'); // Append the Blob as a file
+  
+      // Send the request to the API
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      // Parse the response
+      const result = await response.json();
+  
+      // Set the transcription
+      setTranscription(result.transcription);
+      console.log('Transcription:', result.transcription);
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+    }
   };
 
   return (
