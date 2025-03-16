@@ -13,6 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log("Transcribing...");
     // Save the uploaded file temporarily
     const file = req.body.file;
     const filePath = path.join(process.cwd(), 'temp-audio.wav');
