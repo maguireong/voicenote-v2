@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     console.log(notionData);
 
     // Delete the temporary file
-    // fs.unlinkSync(filePath);
+    fs.unlinkSync(filePath);
 
     // Return the transcription and Notion response
     res.status(200).json({ transcription, notionData });
