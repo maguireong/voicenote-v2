@@ -7,8 +7,8 @@ const url = require('url');
 require('dotenv').config();
 
 // Notion configuration
-const NOTION_TOKEN = process.env.NOTION_TOKEN || "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";
-const DATABASE_ID = process.env.DATABASE_ID || "12e726ebeb6f80258371c7dd12c94f9d";
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
+const DATABASE_ID = process.env.DATABASE_ID;
 
 const getPublishedDate = () => new Date().toISOString();
 
@@ -55,9 +55,9 @@ export default async function handler(req, res) {
 
       console.log('Initializing OAuth2 client');
       const oauth2Client = new google.auth.OAuth2(
-        "429276411238-21113j0sruftbjq1rueke0l0dsq201i7.apps.googleusercontent.com",
-        "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",
-        "http://localhost:3000/api/redirect",
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI
       );
 
       const { tokens } = await oauth2Client.getToken(authorizationCode);
