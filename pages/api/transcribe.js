@@ -1,5 +1,15 @@
 import { SpeechClient } from '@google-cloud/speech';
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Load environment variables
+const GOOGLE_APPLICATION_CREDENTIALS = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(GOOGLE_APPLICATION_CREDENTIALS)) {
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(GOOGLE_APPLICATION_CREDENTIALS);
+} else {
+  console.error('Google application credentials file not found:', GOOGLE_APPLICATION_CREDENTIALS);
+}
 
 const NOTION_TOKEN = "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";
 const DATABASE_ID = "12e726ebeb6f80258371c7dd12c94f9d";
