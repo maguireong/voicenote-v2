@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
 
-const VoiceRecorder = () => {
+const VoiceRecorder = ({code}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [transcription, setTranscription] = useState('');
@@ -33,8 +32,11 @@ const VoiceRecorder = () => {
   
     try {
       // Create a FormData object
+
+      console.log('Authorization Code in redirect:', code);
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.wav'); // Append the Blob as a file
+      formData.append('authorisationCode', code); // Append the authorization code
   
       // Send the request to the API
       const response = await fetch('/api/transcribe', {

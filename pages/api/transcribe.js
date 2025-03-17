@@ -1,18 +1,14 @@
-import { SpeechClient } from '@google-cloud/speech';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+const { OAuth2Client } = require('google-auth-library');
+const { GoogleAuth } = require('google-auth-library');
+const { SpeechClient } = require('@google-cloud/speech');
+const { google } = require('googleapis');
+const multer = require('multer');
+const url = require('url');
+require('dotenv').config();
 
-// Load environment variables
-const GOOGLE_APPLICATION_CREDENTIALS = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-if (GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(GOOGLE_APPLICATION_CREDENTIALS)) {
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(GOOGLE_APPLICATION_CREDENTIALS);
-} else {
-  console.error('Google application credentials file not found:', GOOGLE_APPLICATION_CREDENTIALS);
-}
-
-const NOTION_TOKEN = "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";
-const DATABASE_ID = "12e726ebeb6f80258371c7dd12c94f9d";
+// Notion configuration
+const NOTION_TOKEN = process.env.NOTION_TOKEN || "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";
+const DATABASE_ID = process.env.DATABASE_ID || "12e726ebeb6f80258371c7dd12c94f9d";
 
 const getPublishedDate = () => new Date().toISOString();
 
@@ -31,18 +27,13 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization"
-    );
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     return res.status(200).end(); // End the response early for OPTIONS
   }
 
-  console.log('Request:', req.method, req.body);
-
   if (req.method !== 'POST') {
-     // Handle unsupported HTTP methods
-     return res.setHeader("Access-Control-Allow-Origin", "*").status(405).send("Method Not Allowed"); // Include CORS header
+    // Handle unsupported HTTP methods
+    return res.setHeader("Access-Control-Allow-Origin", "*").status(405).send("Method Not Allowed"); // Include CORS header
   }
 
   try {
@@ -53,8 +44,35 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'File upload error' });
       }
 
-      // Initialize the SpeechClient
-      const client = new SpeechClient();
+      // Extract authorization code from the query parameters
+      const authorizationCode = req.body.authorisationCode;
+
+      console.log('Authorization code:', authorizationCode);
+
+      if (!authorizationCode) {
+        return res.status(400).json({ message: 'Authorization code not found' });
+      }
+
+      console.log('Initializing OAuth2 client');
+      const oauth2Client = new google.auth.OAuth2(
+        "429276411238-21113j0sruftbjq1rueke0l0dsq201i7.apps.googleusercontent.com",
+        "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",
+        "http://localhost:3000/api/redirect",
+      );
+
+      const { tokens } = await oauth2Client.getToken(authorizationCode);
+      
+      oauth2Client.setCredentials(tokens);
+      
+      console.log('Retrieving tokens');
+
+      console.log('Initializing SpeechClient');
+      // Initialize the SpeechClient with OAuth2 credentials
+      const auth = new GoogleAuth({
+        authClient: oauth2Client,
+      });
+
+      const client = new SpeechClient({ auth });
 
       // Get the file data from the request
       const file = req.file;
@@ -87,39 +105,37 @@ export default async function handler(req, res) {
         .join('\n');
 
       // Save transcription to Notion
-    const notionResponse = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${NOTION_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({
-        parent: { database_id: DATABASE_ID },
-        properties: {
-          Date: {
-            date: {
-              start: getPublishedDate(),
+      const notionResponse = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${NOTION_TOKEN}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28',
+        },
+        body: JSON.stringify({
+          parent: { database_id: DATABASE_ID },
+          properties: {
+            Date: {
+              date: {
+                start: getPublishedDate(),
+              },
+            },
+            Text: {
+              title: [
+                {
+                  text: {
+                    content: transcription,
+                    link: null,
+                  },
+                },
+              ],
             },
           },
-  
-          Text: {
-            title: [
-              {
-                text: {
-                  content: transcription,
-                  link: null,
-                },
-              },
-            ],
-          },
-        }
-      })
-    });
+        }),
+      });
 
-    const notionData = await notionResponse.json();
-
-    console.log(notionData);
+      const notionData = await notionResponse.json();
+      console.log(notionData);
 
       // Return the transcription
       res.status(200).json({ transcription });
