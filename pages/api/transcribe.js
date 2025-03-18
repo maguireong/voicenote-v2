@@ -8,7 +8,7 @@ require('dotenv').config();
 
 // Notion configuration
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
-const DATABASE_ID = process.env.DATABASE_ID;
+const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
 const getPublishedDate = () => new Date().toISOString();
 
@@ -55,9 +55,9 @@ export default async function handler(req, res) {
 
       console.log('Initializing OAuth2 client');
       const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
+        process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
       );
 
       const { tokens } = await oauth2Client.getToken(authorizationCode);
