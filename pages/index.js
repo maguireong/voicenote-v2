@@ -1,5 +1,5 @@
 const clientId = process.env.GOOGLE_CLIENT_ID;
-const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+const redirectUri = process.env.GOOGLE_REDIRECT_URI || "https://voicenote-v2.vercel.app/api/redirect";
 
 export default function Home() {
   const startOAuthFlow = () => {
