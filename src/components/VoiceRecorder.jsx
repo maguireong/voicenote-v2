@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const VoiceRecorder = ({ code }) => {
+const VoiceRecorder = ({userId}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [transcription, setTranscription] = useState('');
@@ -35,7 +35,7 @@ const VoiceRecorder = ({ code }) => {
     try {
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.wav');
-      formData.append('authorisationCode', code);
+      formData.append('userId', userId);
 
       const response = await fetch('/api/transcribe', {
         method: 'POST',
