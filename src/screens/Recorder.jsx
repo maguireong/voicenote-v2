@@ -2,11 +2,10 @@
 
 // import { useEffect, useState } from 'react';
 import VoiceRecorder from '../components/VoiceRecorder';
-import { supabase } from '../clients/supabase/client';
 // import { useRouter } from 'next/router';
 import { signOut } from '../clients/actions'
 
-const Recorder = ({userId}) => {
+const Recorder = ({user}) => {
     // const router = useRouter();
     // const [session, setSession] = useState(null);
 
@@ -35,14 +34,11 @@ const Recorder = ({userId}) => {
   // }
 
 
-    return <div className="container mx-auto p-4">
-            <VoiceRecorder userId={userId}/>
-            <form action={signOut}>
-          <button className='btn' type='submit'>
-            Sign Out
-          </button>
-        </form>
-        </div>;
+    return (
+        <div className="relative min-h-screen">
+        <VoiceRecorder user={user} />
+      </div>
+    );
 }
 
 export default Recorder;

@@ -1,33 +1,18 @@
 import { createClientForServer } from '../clients/supabase/server'
-import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import Recorder from '../screens/Recorder'
 
 export default async function Home() {
   const supabase = await createClientForServer()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const session = await supabase.auth.getUser()
-
-  if (!session.data.user)
-    return (
-      <div className='flex flex-col items-center justify-center h-screen gap-4'>
-        <h1 className='text-4xl font-bold'>Not Authenticated</h1>
-        <Link className='btn' href='/auth'>
-          Sign in
-        </Link>
-      </div>
-    )
-
-  const {
-    data: {
-      user: { id: userId },
-    },
-  } = session
-
-  console.log(session, userId)
+  if (!user) {
+    redirect('/auth') // Automatically redirect to auth page
+  }
 
   return (
-    <div className=''>
-      <Recorder userId={userId}/>
+    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen">
+      <Recorder user={user} />
     </div>
   )
 }
