@@ -147,7 +147,7 @@ const VoiceRecorder = ({ user }) => {
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-8 w-full max-w-md border border-white/20">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Voice Recorder</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Transcribe & send to Notion</h1>
             <p className="text-sm text-gray-500">Welcome back, {user.user_metadata.name}</p>
           </div>
           <Image
